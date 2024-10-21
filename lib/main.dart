@@ -1,254 +1,125 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-void main() {
-  runApp(MyApp());
-}
+void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: AlertHomePage(),
+      title: '7-11 Branches',
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+      ),
+      home: BranchList(),
     );
   }
 }
 
-class AlertHomePage extends StatefulWidget {
-  @override
-  _AlertHomePageState createState() => _AlertHomePageState();
+class Branch {
+  final int id;
+  final String name;
+  bool hasIssue;
+
+  Branch({required this.id, required this.name, this.hasIssue = false});
 }
 
-class _AlertHomePageState extends State<AlertHomePage> {
-  TextEditingController _dateController = TextEditingController();
-  DateTime? _selectedDate;
-  TextEditingController _productCodeController = TextEditingController();
+class BranchList extends StatefulWidget {
+  @override
+  _BranchListState createState() => _BranchListState();
+}
 
-  // สมมติข้อมูลสินค้าเพิ่มเติม
-  List<Map<String, dynamic>> products = [
-    {
-      'productCode': '9400000',
-      'alertDate': '12/10/2024',
-      'isError': true,
-      'branch': '1',
-      'docDate': '23/7/2567',
-      'docNo': '0613800346',
-      'transType': '1',
-      'cvCode': '00101',
-      'vendorName': 'Cash Purchases',
-      'recType': 'CP',
-      'refDocNo': '6',
-      'refDocDate': '31/7/2567',
-      'c2': '720.00'
-    },
-    {
-      'productCode': '5001577',
-      'alertDate': '10/10/2024',
-      'isError': false,
-      'branch': '2',
-      'docDate': '12/10/2024',
-      'docNo': '0613800345',
-      'transType': '2',
-      'cvCode': '00102',
-      'vendorName': 'Credit Purchases',
-      'recType': 'CP',
-      'refDocNo': '7',
-      'refDocDate': '11/10/2567',
-      'c2': '500.00'
-    },
-    {
-      'productCode': '9400001',
-      'alertDate': '15/10/2024',
-      'isError': true,
-      'branch': '3',
-      'docDate': '24/7/2567',
-      'docNo': '0613800347',
-      'transType': '1',
-      'cvCode': '00103',
-      'vendorName': 'Wholesale Purchases',
-      'recType': 'CP',
-      'refDocNo': '8',
-      'refDocDate': '30/7/2567',
-      'c2': '1000.00'
-    },
-    {
-      'productCode': '9400002',
-      'alertDate': '16/10/2024',
-      'isError': false,
-      'branch': '4',
-      'docDate': '17/10/2567',
-      'docNo': '0613800348',
-      'transType': '3',
-      'cvCode': '00104',
-      'vendorName': 'Retail Purchases',
-      'recType': 'CP',
-      'refDocNo': '9',
-      'refDocDate': '18/10/2567',
-      'c2': '1500.00'
-    },
-    {
-      'productCode': '9400003',
-      'alertDate': '17/10/2024',
-      'isError': true,
-      'branch': '5',
-      'docDate': '18/10/2567',
-      'docNo': '0613800349',
-      'transType': '2',
-      'cvCode': '00105',
-      'vendorName': 'Cash Purchases',
-      'recType': 'CP',
-      'refDocNo': '10',
-      'refDocDate': '19/10/2567',
-      'c2': '800.00'
-    },
-    {
-      'productCode': '9400004',
-      'alertDate': '18/10/2024',
-      'isError': false,
-      'branch': '6',
-      'docDate': '19/10/2567',
-      'docNo': '0613800350',
-      'transType': '1',
-      'cvCode': '00106',
-      'vendorName': 'Credit Purchases',
-      'recType': 'CP',
-      'refDocNo': '11',
-      'refDocDate': '20/10/2567',
-      'c2': '400.00'
-    },
+class _BranchListState extends State<BranchList> {
+  List<Branch> branches = [
+    Branch(id: 1, name: 'Branch 1', hasIssue: true),
+    Branch(id: 2, name: 'Branch 2', hasIssue: false),
+    Branch(id: 3, name: 'Branch 3', hasIssue: false),
+    Branch(id: 4, name: 'Branch 4', hasIssue: true),
   ];
 
-  List<Map<String, dynamic>> filteredProducts = [];
-
-  @override
-  void initState() {
-    super.initState();
-    filteredProducts = products;
-    _sortProducts();
-  }
-
-  void _sortProducts() {
+  void resolveIssue(int branchId) {
     setState(() {
-      filteredProducts.sort((a, b) {
-        if (a['isError'] && !b['isError']) return -1;
-        if (!a['isError'] && b['isError']) return 1;
-
-        // ถ้า isError เหมือนกัน ให้เรียงตามวันที่ alertDate (ล่าสุดก่อน)
-        DateTime dateA = DateFormat('dd/MM/yyyy').parse(a['alertDate']);
-        DateTime dateB = DateFormat('dd/MM/yyyy').parse(b['alertDate']);
-        return dateB.compareTo(dateA);
-      });
-    });
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _dateController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!);
-        _filterProductsByDate(_dateController.text); // กรองสินค้าตามวันที่เลือก
-      });
-    }
-  }
-
-  void _filterProductsByDate(String selectedDate) {
-    setState(() {
-      filteredProducts = products
-          .where((product) => product['alertDate'] == selectedDate)
-          .toList();
-      _sortProducts();  // จัดเรียงใหม่หลังการกรอง
-    });
-  }
-
-  void _filterProducts(String searchCode) {
-    setState(() {
-      if (searchCode.isEmpty) {
-        filteredProducts = products;
-      } else {
-        filteredProducts = products
-            .where((product) =>
-                product['productCode'].toString().contains(searchCode))
-            .toList();
-      }
-      _sortProducts();  // จัดเรียงใหม่หลังการกรอง
+      branches.firstWhere((branch) => branch.id == branchId).hasIssue = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    branches.sort((a, b) {
+      if (a.hasIssue == b.hasIssue) {
+        return a.id.compareTo(b.id);
+      }
+      return a.hasIssue ? -1 : 1;
+    });
+
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/ce00aca9cb774dbb1c13a664bdfb90da.png', width: 100), 
-          ],
+        title: Center(
+          child: Image.asset('assets/ce00aca9cb774dbb1c13a664bdfb90da.png', width: 110),
         ),
-        backgroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: CircleAvatar(
-              backgroundImage: AssetImage('assets/user_profile.png'),
-            ),
-            onPressed: () {},
-          ),
-        ],
-        leading: IconButton(
-          icon: Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
-        ),
-      ),
-      body: Column(
-        children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _productCodeController,
-              decoration: InputDecoration(
-                hintText: 'Search by Product Code',
-                prefixIcon: Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () {
-                    _selectDate(context);
-                  },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onSubmitted: (value) {
-                _filterProducts(value);
-              },
+            child: CircleAvatar(
+              backgroundImage: AssetImage(''),
             ),
           ),
+        ],
+      ),
+      body: Column(
+        children: <Widget>[
+          SearchBar(),
           Expanded(
-            child: ListView.builder(
-              itemCount: filteredProducts.length,
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16.0),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16.0,
+                mainAxisSpacing: 16.0,
+                childAspectRatio: 3 / 4,
+              ),
+              itemCount: branches.length,
               itemBuilder: (context, index) {
-                final product = filteredProducts[index];
-                return ProductCard(
-                  product: product,
-                  isError: product['isError'],
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ErrorDetailPage(productData: product),
-                      ),
-                    );
-
-                    if (result != null && result == 'updated') {
-                      setState(() {
-                        product['isError'] = false;
-                      });
+                final branch = branches[index];
+                return BranchCard(
+                  branch: branch,
+                  onQuickAccess: () {
+                    if (branch.hasIssue) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ErrorDetailPage(
+                            productCode: '9400003',
+                            dateOfAlert: '24/10/2567',
+                            branchId: branch.id,
+                            branchName: branch.name,
+                            docDate: '23/7/2567',
+                            docNo: '0613800346',
+                            transType: '1',
+                            cvCode: '00101',
+                            vendorName: 'Cash Purchases',
+                            recType: 'CP',
+                            refDocNo: '6',
+                            refDocDate: '31/7/2567',
+                            c2: '720.00',
+                            onSeeFeedback: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FeedbackScreen(
+                                    productCode: '9400003',
+                                    dateOfAlert: 'dd/mm/yy',
+                                    branchId: branch.id, 
+                                    branchName: branch.name,
+                                    mistakeOccurred: true, 
+                                    finalFeedback: 'The computer got stuck key on number 0',
+                                    resolveIssue: resolveIssue, 
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
                     }
                   },
                 );
@@ -261,44 +132,71 @@ class _AlertHomePageState extends State<AlertHomePage> {
   }
 }
 
-class ProductCard extends StatelessWidget {
-  final Map<String, dynamic> product;
-  final bool isError;
-  final VoidCallback onPressed;
+class SearchBar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: TextField(
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.search),
+          hintText: 'Search reported history',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-  ProductCard({required this.product, required this.isError, required this.onPressed});
+class BranchCard extends StatelessWidget {
+  final Branch branch;
+  final VoidCallback onQuickAccess;
+
+  BranchCard({required this.branch, required this.onQuickAccess});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: isError ? Colors.red : Colors.white,
-      child: ListTile(
-        leading: isError
-            ? Icon(Icons.error, color: Colors.white)
-            : Icon(Icons.check_circle_outline, color: Colors.green),
-        title: Text(product['productCode']),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Date of alert: ${product['alertDate']}'),
-            if (isError)
-              Row(
-                children: [
-                  Icon(Icons.access_time, color: Colors.white),
-                  SizedBox(width: 5),
-                  Text('This Product Data got an error',
-                      style: TextStyle(color: Colors.white)),
-                ],
+      color: branch.hasIssue ? Colors.red : Colors.grey[200],
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Image.asset(
+              'assets/pngegg.png',
+              height: 80,
+            ),
+            Text(
+              branch.name,
+              style: TextStyle(fontSize: 18, color: Colors.black),
+            ),
+            if (branch.hasIssue)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: ElevatedButton(
+                  onPressed: onQuickAccess,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.red, backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(Icons.access_alarm, color: Colors.red),
+                      SizedBox(width: 8
+                      ),
+                      Text('quick access', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
               ),
           ],
-        ),
-        trailing: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            foregroundColor: isError ? Colors.red : Colors.white,
-            backgroundColor: isError ? Colors.white : Colors.blue,
-          ),
-          child: Text('Details'),
         ),
       ),
     );
@@ -306,9 +204,37 @@ class ProductCard extends StatelessWidget {
 }
 
 class ErrorDetailPage extends StatelessWidget {
-  final Map<String, dynamic> productData;
+  final String productCode;
+  final String dateOfAlert;
+  final int branchId;
+  final String branchName;
+  final String docDate;
+  final String docNo;
+  final String transType;
+  final String cvCode;
+  final String vendorName;
+  final String recType;
+  final String refDocNo;
+  final String refDocDate;
+  final String c2;
+  final VoidCallback onSeeFeedback;
 
-  ErrorDetailPage({required this.productData});
+  ErrorDetailPage({
+    required this.productCode,
+    required this.dateOfAlert,
+    required this.branchId,
+    required this.branchName,
+    required this.docDate,
+    required this.docNo,
+    required this.transType,
+    required this.cvCode,
+    required this.vendorName,
+    required this.recType,
+    required this.refDocNo,
+    required this.refDocDate,
+    required this.c2,
+    required this.onSeeFeedback,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -317,391 +243,153 @@ class ErrorDetailPage extends StatelessWidget {
         title: Text('Error Detail'),
         backgroundColor: Colors.red,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                color: productData['isError'] ? Colors.red : Colors.green,
-                child: ListTile(
-                  title: Text(
-                    productData['productCode'],
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Date of alert: ${productData['alertDate']}',
-                          style: TextStyle(color: Colors.white)),
-                      if (productData['isError'])
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, color: Colors.white),
-                            SizedBox(width: 5),
-                            Text('This Product Data got an error',
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                    ],
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: Colors.red,
+              child: ListTile(
+                title: Text(productCode, style: TextStyle(color: Colors.white)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Date of alert: $dateOfAlert',
+                        style: TextStyle(color: Colors.white)),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, color: Colors.white),
+                        SizedBox(width: 5),
+                        Text('This Product Data got an error',
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
-              _buildNonEditableText('BRANCH', productData['branch']),
-              _buildNonEditableText('PRODUCT_CODE', productData['productCode']),
-              _buildNonEditableText('DOC_DATE', productData['docDate']),
-              _buildNonEditableText('DOC_NO', productData['docNo']),
-              _buildNonEditableText('TRANS_TYPE', productData['transType']),
-              _buildNonEditableText('CV_CODE', productData['cvCode']),
-              _buildNonEditableText('VENDOR_NAME', productData['vendorName']),
-              _buildNonEditableText('REC_TYPE', productData['recType']),
-              _buildNonEditableText('REF_DOC_NO', productData['refDocNo']),
-              _buildNonEditableText('REF_DOC_DATE', productData['refDocDate']),
-              _buildNonEditableText('C2', productData['c2']),
-              SizedBox(height: 20),
-              if (productData['isError'])
-                Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              FeedbackPage(productData: productData),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.red,
-                    ),
-                    child: Text('Feedback'),
-                  ),
-                ),
-            ],
-          ),
+            ),
+            SizedBox(height: 20),
+            _buildDetailText('BRANCH', branchName),
+            _buildDetailText('PRODUCT_CODE', productCode),
+            _buildDetailText('DOC_DATE', docDate),
+            _buildDetailText('DOC_NO', docNo),
+            _buildDetailText('TRANS_TYPE', transType),
+            _buildDetailText('CV_CODE', cvCode),
+            _buildDetailText('VENDOR_NAME', vendorName),
+            _buildDetailText('REC_TYPE', recType),
+            _buildDetailText('REF_DOC_NO', refDocNo),
+            _buildDetailText('REF_DOC_DATE', refDocDate),
+            _buildDetailText('C2', c2),
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: onSeeFeedback,
+                child: Text('See Feedback'),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNonEditableText(String label, String value) {
+  Widget _buildDetailText(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Text(
-            '$label: ',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Text(
-            value,
-            style: TextStyle(fontSize: 16),
-          ),
+          Text('$label: ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(value),
         ],
       ),
     );
   }
 }
 
-class FeedbackPage extends StatefulWidget {
-  final Map<String, dynamic> productData;
+class FeedbackScreen extends StatelessWidget {
+  final String productCode;
+  final String dateOfAlert;
+  final int branchId;
+  final String branchName;
+  final bool mistakeOccurred;
+  final String finalFeedback;
+  final Function(int) resolveIssue;
 
-  FeedbackPage({required this.productData});
-
-  @override
-  _FeedbackPageState createState() => _FeedbackPageState();
-}
-
-class _FeedbackPageState extends State<FeedbackPage> {
-  bool isCheckedYes = false;
-  bool isCheckedNo = false;
-  TextEditingController feedbackController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Feedback'),
-        backgroundColor: Colors.red,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                color: widget.productData['isError'] ? Colors.red : Colors.green,
-                child: ListTile(
-                  title: Text(
-                    widget.productData['productCode'],
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Date of alert: ${widget.productData['alertDate']}',
-                          style: TextStyle(color: Colors.white)),
-                      if (widget.productData['isError'])
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, color: Colors.white),
-                            SizedBox(width: 5),
-                            Text('This Product Data got an error',
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      if (!widget.productData['isError'])
-                        Text('No Error', style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Does this mistake actually occur?',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  Checkbox(
-                    value: isCheckedYes,
-                    onChanged: (value) {
-                      setState(() {
-                        isCheckedYes = value!;
-                        isCheckedNo = false;
-                      });
-                    },
-                  ),
-                  Text('Yes'),
-                ],
-              ),
-              Row(
-                children: [
-                  Checkbox(
-                    value: isCheckedNo,
-                    onChanged: (value) {
-                      setState(() {
-                        isCheckedNo = value!;
-                        isCheckedYes = false;
-                      });
-                    },
-                  ),
-                  Text('No'),
-                ],
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: feedbackController,
-                decoration: InputDecoration(
-                  labelText: 'Feedback',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-              ),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            EditingDetailPage(productData: widget.productData),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.red,
-                  ),
-                  child: Text('Send'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class EditingDetailPage extends StatefulWidget {
-  final Map<String, dynamic> productData;
-
-  EditingDetailPage({required this.productData});
-
-  @override
-  _EditingDetailPageState createState() => _EditingDetailPageState();
-}
-
-class _EditingDetailPageState extends State<EditingDetailPage> {
-  late TextEditingController docNoController;
-  late TextEditingController transTypeController;
-  late TextEditingController cvCodeController;
-  late TextEditingController vendorNameController;
-  late TextEditingController recTypeController;
-  late TextEditingController refDocNoController;
-  late TextEditingController refDocDateController;
-  late TextEditingController c2Controller;
-
-  late Map<String, String> initialValues;
-
-  @override
-  void initState() {
-    super.initState();
-    initialValues = {
-      'DOC_NO': widget.productData['docNo'],
-      'TRANS_TYPE': widget.productData['transType'],
-      'CV_CODE': widget.productData['cvCode'],
-      'VENDOR_NAME': widget.productData['vendorName'],
-      'REC_TYPE': widget.productData['recType'],
-      'REF_DOC_NO': widget.productData['refDocNo'],
-      'REF_DOC_DATE': widget.productData['refDocDate'],
-      'C2': widget.productData['c2'],
-    };
-
-    docNoController = TextEditingController(text: widget.productData['docNo']);
-    transTypeController =
-        TextEditingController(text: widget.productData['transType']);
-    cvCodeController = TextEditingController(text: widget.productData['cvCode']);
-    vendorNameController =
-        TextEditingController(text: widget.productData['vendorName']);
-    recTypeController =
-        TextEditingController(text: widget.productData['recType']);
-    refDocNoController =
-        TextEditingController(text: widget.productData['refDocNo']);
-    refDocDateController =
-        TextEditingController(text: widget.productData['refDocDate']);
-    c2Controller = TextEditingController(text: widget.productData['c2']);
-  }
+  FeedbackScreen({
+    required this.productCode,
+    required this.dateOfAlert,
+    required this.branchId,
+    required this.branchName,
+    required this.mistakeOccurred,
+    required this.finalFeedback,
+    required this.resolveIssue,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Editing Detail'),
-        backgroundColor: Colors.red,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Go back to FeedbackPage
-          },
-        ),
+        title: Text('Feedback from retail'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                color: widget.productData['isError'] ? Colors.red : Colors.green,
-                child: ListTile(
-                  leading: Image.asset('assets/pngegg.png'),
-                  title: Text(
-                    widget.productData['productCode'],
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Date of alert: ${widget.productData['alertDate']}',
-                          style: TextStyle(color: Colors.white)),
-                      if (widget.productData['isError'])
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, color: Colors.white),
-                            SizedBox(width: 5),
-                            Text('This Product Data got an error',
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      if (!widget.productData['isError'])
-                        Text('No Error', style: TextStyle(color: Colors.white)),
-                    ],
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Card(
+              color: Colors.red,
+              child: ListTile(
+                title: Text(productCode, style: TextStyle(color: Colors.white)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Date of alert: $dateOfAlert',
+                        style: TextStyle(color: Colors.white)),
+                    Row(
+                      children: [
+                        Icon(Icons.access_time, color: Colors.white),
+                        SizedBox(width: 5),
+                        Text('This Product Data got an error',
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
-              _buildNonEditableText('BRANCH', widget.productData['branch']),
-              _buildNonEditableText('PRODUCT_CODE', widget.productData['productCode']),
-              _buildNonEditableText('DOC_DATE', widget.productData['docDate']),
-              _buildEditableField('DOC_NO', docNoController),
-              _buildEditableField('TRANS_TYPE', transTypeController),
-              _buildEditableField('CV_CODE', cvCodeController),
-              _buildEditableField('VENDOR_NAME', vendorNameController),
-              _buildEditableField('REC_TYPE', recTypeController),
-              _buildEditableField('REF_DOC_NO', refDocNoController),
-              _buildEditableField('REF_DOC_DATE', refDocDateController),
-              _buildEditableField('C2', c2Controller),
-              SizedBox(height: 20),
+            ),
+            SizedBox(height: 20),
+            _buildDetailText('BRANCH', branchName),
+            _buildDetailText('PRODUCT_CODE', productCode),
+            _buildDetailText('Does this mistake actually occur?',
+                mistakeOccurred ? 'YES' : 'NO'),
+            SizedBox(height: 20),
+            _buildDetailText('Final feedback:', finalFeedback),
+            SizedBox(height: 20),
             Center(
               child: ElevatedButton(
                 onPressed: () {
-                  // ส่งสัญญาณกลับไปที่หน้าหลักว่ามีการอัปเดตข้อมูลและ pop ทุกหน้าเพื่อกลับหน้าแรก
-                  Navigator.popUntil(context, ModalRoute.withName('/'));
+                  resolveIssue(branchId);
+                  Navigator.popUntil(context, (route) => route.isFirst);
                 },
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.red,
-                ),
-                child: Text('Submit'),
+                child: Text('Clear'),
               ),
             ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNonEditableText(String label, String value) {
+  Widget _buildDetailText(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Text(
-            '$label: ',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Text(
-            value,
-            style: TextStyle(fontSize: 16),
-          ),
+          Text('$label: ', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(value),
         ],
       ),
     );
-  }
-
-  Widget _buildEditableField(String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: isFieldModified(label, controller.text) ? Colors.red : Colors.black,
-          ),
-          border: OutlineInputBorder(),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.grey[400]!,
-            ),
-          ),
-        ),
-        onChanged: (value) {
-          setState(() {});
-        },
-      ),
-    );
-  }
-
-  bool isFieldModified(String fieldName, String currentValue) {
-    return initialValues[fieldName] != currentValue;
   }
 }
